@@ -1,4 +1,342 @@
-  const res = await fetch(SUPABASE_URL+'/rest/v1/survey_responses', {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brand Name Survey</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f6; color: #1a1a1a; min-height: 100vh; }
+  .outer { max-width: 640px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .lang-bar { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .lang-btn { padding: 6px 18px; border-radius: 8px; border: 1px solid #d0d0cc; font-size: 13px; cursor: pointer; background: #fff; color: #1a1a1a; transition: background 0.15s; }
+  .lang-btn.active { background: #ebebea; border-color: #aaa; font-weight: 500; }
+  .progress-bar { height: 3px; background: #e0e0dc; border-radius: 2px; margin-bottom: 2rem; }
+  .progress-fill { height: 100%; background: #666; border-radius: 2px; transition: width 0.3s; }
+  .step { display: none; }
+  .step.active { display: block; }
+  .step-label { font-size: 11px; color: #999; margin-bottom: 0.5rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .section-title { font-size: 24px; font-weight: 500; margin-bottom: 0.5rem; }
+  .section-sub { font-size: 14px; color: #666; margin-bottom: 2rem; line-height: 1.7; }
+  .brand-badge { display: inline-block; font-size: 30px; font-weight: 500; letter-spacing: 0.08em; padding: 14px 28px; border: 1px solid #ccc; border-radius: 12px; margin-bottom: 2rem; background: #fff; }
+  .q-block { margin-bottom: 1.75rem; }
+  .q-label { font-size: 14px; font-weight: 500; margin-bottom: 0.75rem; }
+  .q-hint { font-size: 12px; color: #999; margin-bottom: 0.6rem; }
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-opt, .check-opt { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border: 1px solid #e0e0dc; border-radius: 8px; cursor: pointer; background: #fff; font-size: 14px; transition: border-color 0.15s, background 0.15s; }
+  .radio-opt:hover, .check-opt:hover { border-color: #bbb; background: #fafaf8; }
+  .radio-opt input, .check-opt input { accent-color: #333; flex-shrink: 0; width: 16px; height: 16px; }
+  .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 480px) { .check-grid { grid-template-columns: 1fr; } }
+  .slider-wrap { padding: 4px 0; }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-bottom: 8px; }
+  .slider-val { text-align: center; font-size: 22px; font-weight: 500; margin-top: 10px; }
+  input[type="range"] { width: 100%; accent-color: #333; }
+  textarea { width: 100%; padding: 10px 12px; border: 1px solid #e0e0dc; border-radius: 8px; font-size: 14px; font-family: inherit; color: #1a1a1a; background: #fff; resize: vertical; min-height: 80px; }
+  textarea:focus { outline: none; border-color: #999; }
+  .btn-row { display: flex; gap: 12px; margin-top: 2rem; }
+  .btn { padding: 11px 26px; border-radius: 8px; border: 1px solid #d0d0cc; font-size: 14px; cursor: pointer; background: #fff; color: #1a1a1a; font-family: inherit; transition: background 0.15s; }
+  .btn:hover { background: #f0f0ee; }
+  .btn-primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .btn-primary:hover { background: #333; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #b91c1c; margin-top: 1rem; display: none; }
+  .done-box { text-align: center; padding: 3rem 1rem; }
+  .done-icon { font-size: 48px; color: #666; margin-bottom: 1rem; }
+  .done-title { font-size: 24px; font-weight: 500; margin-bottom: 0.5rem; }
+  .done-sub { font-size: 14px; color: #666; }
+</style>
+</head>
+<body>
+<div class="outer">
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('en')">English</button>
+    <button class="lang-btn" onclick="setLang('fr')">Français</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+
+  <div class="step active" id="step-0">
+    <div class="step-label" data-en="Introduction" data-fr="Introduction"></div>
+    <div class="section-title" data-en="Brand Name Study" data-fr="Étude de noms de marque"></div>
+    <div class="section-sub" data-en="Thank you for helping us evaluate new brand names. Please answer based on your first impression — there are no right or wrong answers. Takes about 5 minutes." data-fr="Merci de nous aider à évaluer de nouveaux noms de marque. Répondez selon votre première impression — il n'y a pas de bonnes ou mauvaises réponses. Durée estimée : 5 minutes."></div>
+    <div class="q-block">
+      <div class="q-label" data-en="Your native language" data-fr="Votre langue maternelle"></div>
+      <div class="radio-group">
+        <label class="radio-opt"><input type="radio" name="native_lang" value="English"> <span data-en="English" data-fr="Anglais"></span></label>
+        <label class="radio-opt"><input type="radio" name="native_lang" value="French"> <span data-en="French" data-fr="Français"></span></label>
+        <label class="radio-opt"><input type="radio" name="native_lang" value="Both"> <span data-en="Both English and French" data-fr="Anglais et français"></span></label>
+        <label class="radio-opt"><input type="radio" name="native_lang" value="Other"> <span data-en="Other" data-fr="Autre"></span></label>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label" data-en="Your age group" data-fr="Votre tranche d'âge"></div>
+      <div class="radio-group">
+        <label class="radio-opt"><input type="radio" name="age" value="18-29"> 18–29</label>
+        <label class="radio-opt"><input type="radio" name="age" value="30-39"> 30–39</label>
+        <label class="radio-opt"><input type="radio" name="age" value="40-49"> 40–49</label>
+        <label class="radio-opt"><input type="radio" name="age" value="50+"> 50+</label>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="next()" data-en="Start →" data-fr="Commencer →"></button></div>
+  </div>
+
+  <div class="step" id="step-1"></div>
+  <div class="step" id="step-2"></div>
+  <div class="step" id="step-3"></div>
+
+  <div class="step" id="step-4">
+    <div class="step-label" data-en="Final question" data-fr="Question finale"></div>
+    <div class="section-title" data-en="Overall preference" data-fr="Préférence globale"></div>
+    <div class="section-sub" data-en="Now that you've seen all three brand names, which do you prefer?" data-fr="Maintenant que vous avez vu les trois noms, lequel préférez-vous ?"></div>
+    <div class="q-block">
+      <div class="q-label" data-en="Which brand name do you prefer most?" data-fr="Quel nom de marque préférez-vous ?"></div>
+      <div class="radio-group">
+        <label class="radio-opt"><input type="radio" name="pref" value="MESOCORE"> MESOCORE</label>
+        <label class="radio-opt"><input type="radio" name="pref" value="AESTHOS"> AESTHOS</label>
+        <label class="radio-opt"><input type="radio" name="pref" value="TRACÉX"> TRACÉX</label>
+      </div>
+    </div>
+    <div class="q-block">
+      <div class="q-label" data-en="Why did you choose this name?" data-fr="Pourquoi avez-vous choisi ce nom ?"></div>
+      <textarea id="pref_reason" placeholder=""></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="prev()" data-en="← Back" data-fr="← Retour"></button>
+      <button class="btn btn-primary" id="submit-btn" onclick="finish()" data-en="Submit survey" data-fr="Soumettre"></button>
+    </div>
+    <div class="error-box" id="err-box"></div>
+  </div>
+
+  <div class="step" id="step-done">
+    <div class="done-box">
+      <div class="done-icon"><i class="ti ti-circle-check"></i></div>
+      <div class="done-title" data-en="Thank you!" data-fr="Merci !"></div>
+      <div class="done-sub" data-en="Your response has been saved. We appreciate your time!" data-fr="Votre réponse a bien été enregistrée. Merci pour votre temps !"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://iinqjqjdcviwlakpzipz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Ie1MPcdXHU0FGBVfvT_d3w_Yk_3BOf9';
+const BRANDS = ['MESOCORE','AESTHOS','TRACÉX'];
+const BKEYS  = ['mesocore','aesthos','tracex'];
+const CATS_EN = ['Beauty & Skincare','Wellness','Luxury','Fashion','Technology','Health','Lifestyle','Medical','Other'];
+const CATS_FR = ['Beauté & soins','Bien-être','Luxe','Mode','Technologie','Santé','Art de vivre','Médical','Autre'];
+const IMGS_EN = ['Elegant','Sophisticated','Modern','Innovative','Scientific','Professional','Luxurious','Natural','Minimalist','Trendy','Feminine','Masculine','Premium','Creative','Other'];
+const IMGS_FR = ['Élégant','Sophistiqué','Moderne','Innovant','Scientifique','Professionnel','Luxueux','Naturel','Minimaliste','Tendance','Féminin','Masculin','Premium','Créatif','Autre'];
+const RATINGS = [
+  {key:'premium',      en:'How premium does this brand feel?',         fr:'Dans quelle mesure ce nom semble-t-il premium ?',    lo_en:'Not premium',   hi_en:'Extremely premium',   lo_fr:'Pas premium',   hi_fr:'Très premium'},
+  {key:'innovative',   en:'How innovative does this brand feel?',      fr:'Dans quelle mesure ce nom semble-t-il innovant ?',   lo_en:'Traditional',   hi_en:'Highly innovative',   lo_fr:'Traditionnel',  hi_fr:'Très innovant'},
+  {key:'appeal_women', en:'How appealing is this brand to women?',     fr:'Dans quelle mesure ce nom attire-t-il les femmes ?', lo_en:'Not appealing', hi_en:'Extremely appealing', lo_fr:'Pas attractif', hi_fr:'Très attractif'},
+  {key:'pronunciation',en:'How easy is this brand name to pronounce?', fr:'Ce nom est-il facile à prononcer ?',                 lo_en:'Very difficult',hi_en:'Very easy',            lo_fr:'Très difficile',hi_fr:'Très facile'}
+];
+
+let lang = 'en';
+let current = 0;
+// Store all answers in one flat object
+let answers = {};
+
+const t = (en, fr) => lang === 'en' ? en : fr;
+
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim() === (l==='en'?'English':'Français')));
+  applyStatic();
+  // Rebuild brand steps in new language but restore previously entered values
+  for (let i = 0; i < 3; i++) buildBrandStep(i);
+}
+
+function applyStatic() {
+  document.querySelectorAll('[data-en]').forEach(el => { el.textContent = lang==='en' ? el.dataset.en : el.dataset.fr; });
+}
+
+function buildBrandStep(idx) {
+  const bk = BKEYS[idx], br = BRANDS[idx];
+  const el = document.getElementById('step-'+(idx+1));
+  const cats = lang==='en' ? CATS_EN : CATS_FR;
+  const imgs = lang==='en' ? IMGS_EN : IMGS_FR;
+  el.innerHTML = `
+    <div class="step-label">${t('Brand','Marque')} ${idx+1} ${t('of','sur')} 3</div>
+    <div class="brand-badge">${br}</div>
+    <div class="q-block">
+      <div class="q-label">1. ${t('What is the first thing that comes to mind when you see this brand name?','Quelle est la première chose qui vous vient à l\'esprit en voyant ce nom ?')}</div>
+      <textarea id="${bk}_q1" placeholder="${t('Your first impression...','Votre première impression...')}"></textarea>
+    </div>
+    <div class="q-block">
+      <div class="q-label">2. ${t('Which categories do you associate with this brand?','Quelles catégories associez-vous à cette marque ?')}</div>
+      <div class="q-hint">${t('Select all that apply','Sélectionnez tout ce qui s\'applique')}</div>
+      <div class="check-grid" id="${bk}_cats_grid">${cats.map((c,i)=>`<label class="check-opt"><input type="checkbox" class="${bk}_cat" value="${CATS_EN[i]}"> ${c}</label>`).join('')}</div>
+    </div>
+    ${RATINGS.map((r,ri)=>`
+    <div class="q-block">
+      <div class="q-label">${ri+3}. ${t(r.en,r.fr)}</div>
+      <div class="slider-wrap">
+        <div class="slider-labels"><span>${t(r.lo_en,r.lo_fr)}</span><span>${t(r.hi_en,r.hi_fr)}</span></div>
+        <input type="range" min="1" max="10" value="5" step="1" id="${bk}_${r.key}" oninput="document.getElementById('${bk}_${r.key}_val').textContent=this.value">
+        <div class="slider-val" id="${bk}_${r.key}_val">5</div>
+      </div>
+    </div>`).join('')}
+    <div class="q-block">
+      <div class="q-label">7. ${t('What kind of image does this brand convey?','Quelle image ce nom de marque vous évoque-t-il ?')}</div>
+      <div class="q-hint">${t('Select up to 5','Sélectionnez jusqu\'à 5')}</div>
+      <div class="check-grid" id="${bk}_imgs_grid">${imgs.map((c,i)=>`<label class="check-opt"><input type="checkbox" class="${bk}_img" value="${IMGS_EN[i]}"> ${c}</label>`).join('')}</div>
+    </div>
+    <div class="q-block">
+      <div class="q-label">8. ${t('Which country or region do you think this brand comes from?','De quel pays ou région pensez-vous que cette marque vient ?')}</div>
+      <textarea id="${bk}_origin" placeholder="${t('e.g. France, USA, Japan...','ex. France, États-Unis, Japon...')}"></textarea>
+    </div>
+    <div class="q-block">
+      <div class="q-label">9. ${t('Any positive or negative associations with this name?','Des associations positives ou négatives avec ce nom ?')}</div>
+      <textarea id="${bk}_assoc" placeholder="${t('Optional...','Facultatif...')}"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="prev()">${t('← Back','← Retour')}</button>
+      <button class="btn btn-primary" onclick="next()">${idx<2?t('Next brand →','Marque suivante →'):t('Final question →','Question finale →')}</button>
+    </div>`;
+
+  // Restore saved answers after rebuild
+  restoreBrandStep(bk);
+
+  // Limit image checkboxes to 5
+  el.querySelectorAll('.'+bk+'_img').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = el.querySelectorAll('.'+bk+'_img:checked');
+      if (checked.length > 5) cb.checked = false;
+    });
+  });
+}
+
+function saveBrandStep(bk) {
+  const el = document.getElementById('step-'+(BKEYS.indexOf(bk)+1));
+  if (!el) return;
+  const q1 = document.getElementById(bk+'_q1');
+  if (q1) answers[bk+'_q1'] = q1.value;
+  const cats = [];
+  el.querySelectorAll('.'+bk+'_cat:checked').forEach(cb => cats.push(cb.value));
+  answers[bk+'_categories'] = cats.join('|');
+  RATINGS.forEach(r => {
+    const sl = document.getElementById(bk+'_'+r.key);
+    if (sl) answers[bk+'_'+r.key] = parseInt(sl.value);
+  });
+  const imgs = [];
+  el.querySelectorAll('.'+bk+'_img:checked').forEach(cb => imgs.push(cb.value));
+  answers[bk+'_images'] = imgs.join('|');
+  const origin = document.getElementById(bk+'_origin');
+  if (origin) answers[bk+'_origin'] = origin.value;
+  const assoc = document.getElementById(bk+'_assoc');
+  if (assoc) answers[bk+'_associations'] = assoc.value;
+}
+
+function restoreBrandStep(bk) {
+  const q1 = document.getElementById(bk+'_q1');
+  if (q1 && answers[bk+'_q1']) q1.value = answers[bk+'_q1'];
+  if (answers[bk+'_categories']) {
+    const saved = answers[bk+'_categories'].split('|').filter(Boolean);
+    document.querySelectorAll('.'+bk+'_cat').forEach(cb => { cb.checked = saved.includes(cb.value); });
+  }
+  RATINGS.forEach(r => {
+    const sl = document.getElementById(bk+'_'+r.key);
+    const vl = document.getElementById(bk+'_'+r.key+'_val');
+    if (sl && answers[bk+'_'+r.key]) { sl.value = answers[bk+'_'+r.key]; if(vl) vl.textContent = answers[bk+'_'+r.key]; }
+  });
+  if (answers[bk+'_images']) {
+    const saved = answers[bk+'_images'].split('|').filter(Boolean);
+    document.querySelectorAll('.'+bk+'_img').forEach(cb => { cb.checked = saved.includes(cb.value); });
+  }
+  const origin = document.getElementById(bk+'_origin');
+  if (origin && answers[bk+'_origin']) origin.value = answers[bk+'_origin'];
+  const assoc = document.getElementById(bk+'_assoc');
+  if (assoc && answers[bk+'_associations']) assoc.value = answers[bk+'_associations'];
+}
+
+function saveStep0() {
+  const nl = document.querySelector('input[name="native_lang"]:checked');
+  const ag = document.querySelector('input[name="age"]:checked');
+  if (nl) answers['native_lang'] = nl.value;
+  if (ag) answers['age'] = ag.value;
+}
+
+function updateProgress() {
+  document.getElementById('prog').style.width = Math.round((current/5)*100)+'%';
+}
+
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  const el = n==='done' ? document.getElementById('step-done') : document.getElementById('step-'+n);
+  if (el) el.classList.add('active');
+  current = n==='done' ? 5 : n;
+  updateProgress();
+  window.scrollTo(0,0);
+}
+
+function next() {
+  if (current === 0) {
+    saveStep0();
+  } else if (current >= 1 && current <= 3) {
+    saveBrandStep(BKEYS[current-1]);
+  }
+  showStep(current+1);
+}
+
+function prev() {
+  if (current >= 1 && current <= 3) {
+    saveBrandStep(BKEYS[current-1]);
+  }
+  if (current > 0) showStep(current-1);
+}
+
+async function finish() {
+  // Save final step
+  const prefEl = document.querySelector('input[name="pref"]:checked');
+  if (prefEl) answers['preferred_brand'] = prefEl.value;
+  const reasonEl = document.getElementById('pref_reason');
+  if (reasonEl) answers['preference_reason'] = reasonEl.value;
+
+  const btn = document.getElementById('submit-btn');
+  const errBox = document.getElementById('err-box');
+  btn.disabled = true;
+  btn.textContent = t('Saving...','Enregistrement...');
+  errBox.style.display = 'none';
+
+  const payload = {
+    survey_lang: lang,
+    native_lang: answers.native_lang || null,
+    age: answers.age || null,
+    mesocore_q1: answers.mesocore_q1 || null,
+    mesocore_categories: answers.mesocore_categories || null,
+    mesocore_premium: answers.mesocore_premium || null,
+    mesocore_innovative: answers.mesocore_innovative || null,
+    mesocore_appeal_women: answers.mesocore_appeal_women || null,
+    mesocore_pronunciation: answers.mesocore_pronunciation || null,
+    mesocore_images: answers.mesocore_images || null,
+    mesocore_origin: answers.mesocore_origin || null,
+    mesocore_associations: answers.mesocore_associations || null,
+    aesthos_q1: answers.aesthos_q1 || null,
+    aesthos_categories: answers.aesthos_categories || null,
+    aesthos_premium: answers.aesthos_premium || null,
+    aesthos_innovative: answers.aesthos_innovative || null,
+    aesthos_appeal_women: answers.aesthos_appeal_women || null,
+    aesthos_pronunciation: answers.aesthos_pronunciation || null,
+    aesthos_images: answers.aesthos_images || null,
+    aesthos_origin: answers.aesthos_origin || null,
+    aesthos_associations: answers.aesthos_associations || null,
+    tracex_q1: answers.tracex_q1 || null,
+    tracex_categories: answers.tracex_categories || null,
+    tracex_premium: answers.tracex_premium || null,
+    tracex_innovative: answers.tracex_innovative || null,
+    tracex_appeal_women: answers.tracex_appeal_women || null,
+    tracex_pronunciation: answers.tracex_pronunciation || null,
+    tracex_images: answers.tracex_images || null,
+    tracex_origin: answers.tracex_origin || null,
+    tracex_associations: answers.tracex_associations || null,
+    preferred_brand: answers.preferred_brand || null,
+    preference_reason: answers.preference_reason || null
+  };
+
+  try {
+    const res = await fetch(SUPABASE_URL+'/rest/v1/survey_responses', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -25,6 +363,3 @@ updateProgress();
 </script>
 </body>
 </html>
-
-
- 
